@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Windows",
+            "intelliSenseMode": "gcc-x64",
+            "includePath": [
+                "C:/msys64/mingw64/include/ImageMagick-7"
+            ],
+            "defines": [],
+            "forcedInclude": [],
+            "cStandard": "c11",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        }
+    ],
+    "version": 4
+}
