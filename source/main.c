@@ -65,16 +65,8 @@ int main(int argc, char **argv)
         wand = DestroyMagickWand(wand);
     }
 
-    // TODO: Currently, this is unaware of the "max 1 pixel of difference"
-    // restriction.
-    size_t calculated_width = 0;
-    size_t calculated_height = 0;
-    for (size_t x = 0; x < width; x++) {
-        if (column_contrasts[x]) {calculated_width++;}
-    }
-    for (size_t y = 0; y < height; y++) {
-        if (row_contrasts[y]) {calculated_height++;}
-    }
+    size_t calculated_width = calculate_dimension(width, column_contrasts);
+    size_t calculated_height = calculate_dimension(height, row_contrasts);
 
     printf("%zux%zu", calculated_width, calculated_height);
 
@@ -90,7 +82,6 @@ int update_contrasts_from_image(size_t width, bool column_contrasts[], size_t he
 {
     size_t cur_width = MagickGetImageWidth(wand);
     size_t cur_height = MagickGetImageHeight(wand);
-    printf("%zux%zu\n", cur_width, cur_height);
     if (cur_width != width || cur_height != height) {return 1;}
 
     MagickExportImagePixels(wand, 0, 0, width, height, "RGB", CharPixel, pixels);
@@ -162,5 +153,55 @@ void update_row_contrasts_from_pixels(size_t width, size_t height, bool row_cont
             }
         }
         next_row:
+    }
+}
+
+size_t calculate_dimension(size_t contrasts_size, bool contrasts[])
+{
+    size_t num_runs = 0;
+    size_t thinnest = SIZE_MAX;
+    size_t second_thinnest = SIZE_MAX;
+    size_t third_thinnest = SIZE_MAX;
+    size_t run_start = 0;
+    size_t i;
+    for (i = 1; i < contrasts_size; i++) {
+        bool contrast = contrasts[i];
+        if (contrast) {
+            if (i - run_start == 4) {printf("four at: %zu\n", i);}
+            register_run(i - run_start, &num_runs, &thinnest, &second_thinnest, &third_thinnest);
+            run_start = i;
+        }
+    }
+    register_run(i - run_start, &num_runs, &thinnest, &second_thinnest, &third_thinnest);
+    printf("Thinnest: %zu\nSecond thinnest: %zu\nThird thinnest: %zu\n", thinnest, second_thinnest, third_thinnest);
+
+    if (second_thinnest == SIZE_MAX) {
+        // The image has completely uniform pixels in this dimension.
+        return num_runs;
+    } else if (second_thinnest == thinnest + 1 && third_thinnest == SIZE_MAX) {
+        // The detection has succeeded in identifying every single point where
+        // the image switches to a new pixel in this dimension. Put another way,
+        // there were no swaths of the same exact color that took up the whole
+        // width/height.
+        return num_runs;
+    } else {
+        // TODO: Implement this.
+        fprintf(stderr, "Not implemented.\n");
+        return 0;
+    }
+}
+
+void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest)
+{
+    (*num_runs)++;
+    if (run_length < *thinnest) {
+        *third_thinnest = *second_thinnest;
+        *second_thinnest = *thinnest;
+        *thinnest = run_length;
+    } else if (run_length > *thinnest && run_length < *second_thinnest) {
+        *third_thinnest = *second_thinnest;
+        *second_thinnest = run_length;
+    } else if (run_length > *second_thinnest && run_length < *third_thinnest) {
+        *third_thinnest = run_length;
     }
 }
