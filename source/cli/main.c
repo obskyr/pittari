@@ -28,17 +28,16 @@ static char args_doc[] = "<SCREENSHOT IMAGE...>";
 static struct argp_option options[] = {
     {0, 0, 0, 0, "Algorithm options:"},
     {"inexact", 'i', 0, 0, "Allow for some leeway when scanning for differing pixels. Useful for, for example, PlayStation 1 screenshots."},
-    {"leeway", 'l', "leeway", 0, "How much an R, G, or B value can differ when using --inexact (0-255). " STRINGIFY(DEFAULT_FUZZINESS) " by default."},
-    {"nearest-neighbor-variation", 'n', "variation", 0, "With nearest-neighbor scaling to a non-integer factor, pixels will only vary by 1 pixel in size in each dimension. However, if nearest-neighbor scaling has been applied multiple times to an image, this variation may be larger. For such images, this option lets you set the maximum variation in width/height of rows/columns. 1 by default."},
+    {"leeway", 'l', "[0..255]", 0, "How much an R, G, or B value can differ when using --inexact (0-255). " STRINGIFY(DEFAULT_FUZZINESS) " by default."},
+    {"nearest-neighbor-variation", 'n', "[0...]", 0, "With nearest-neighbor scaling to a non-integer factor, pixels will only vary by 1 pixel in size in each dimension. However, if nearest-neighbor scaling has been applied multiple times to an image, this variation may be larger. For such images, this option lets you set the maximum variation in width/height of rows/columns. 1 by default."},
 
     {0, 0, 0, 0, "Output options:"},
     {"custom", 'c', "format", 0, "Print the data in a custom format you supply and exit. Available variables are {width}, {height}, {scaled_width}, {scaled_height}, {x_scale}, {y_scale}, and {par}."},
-    {"par", 'p', 0, 0, "Print the determined pixel aspect ratio in the format \"{par}\" and exit."},
-    {"resolution", 'r', 0, 0, "Print the determined resolution in the format \"{width}x{height}\" and exit."},
-    {"scale", 's', 0, 0, "Print the determined scale in the format \"{x_scale}x{y_scale}\" and exit."},
+    {"print", 'p', "property", 0, "Print one property and exit. Valid values are \"resolution\" (or \"r\"), \"scale\" (or \"s\"), and \"pixel aspect ratio\" (or \"par\"), printing in the formats \"{width}x{height}\", \"{x_scale}x{y_scale}\", and \"{par}\" respectively. Try --custom for more precise output control."},
 
     {0, 0, 0, 0, "Help:", -1},
     {"help", 'h', 0, 0, "Print this help page and exit."},
+    {"usage", 0x80, 0, 0, "Print a short usage message and exit."},
     {"version", 'v', 0, 0, "Print the program name and version and exit."},
     {0, 'V', 0, OPTION_ALIAS},
 
@@ -82,21 +81,24 @@ static int parse_options(int key, char *arg, struct argp_state *state) {
             break;
         case 'p':
             options->format_specified = true;
-            options->format = "{par}";
-            break;
-        case 'r':
-            options->format_specified = true;
-            options->format = "{width}x{height}";
-            break;
-        case 's':
-            options->format_specified = true;
-            options->format = "{x_scale}x{y_scale}";
+            if (strcmp(arg, "resolution") == 0 || strcmp(arg, "r") == 0) {
+                options->format = "{width}x{height}";
+            } else if (strcmp(arg, "scale") == 0 || strcmp(arg, "s") == 0) {
+                options->format = "{x_scale}x{y_scale}";
+            } else if (strcmp(arg, "pixel aspect ratio") == 0 || strcmp(arg, "par") == 0) {
+                options->format = "{par}";
+            } else {
+                fprintf(stderr, "ERROR: Invalid --print argument: \"%s\"\nValid arguments are \"resolution\" (or \"r\"), \"scale\" (or \"s\"), and \"pixel aspect ratio\" (or \"par\").", arg);
+                exit(-1);
+            }
             break;
 
         case 'h':
             argp_state_help(state, stdout, ARGP_HELP_SHORT_USAGE | ARGP_HELP_DOC | ARGP_HELP_LONG | ARGP_HELP_BUG_ADDR | ARGP_HELP_EXIT_OK);
             break;
-        
+        case 0x80:
+            argp_state_help(state, stdout, ARGP_HELP_USAGE | ARGP_HELP_EXIT_OK);
+            break;
         case 'v':
             printf("%s\n", argp_program_version);
             exit(0);
