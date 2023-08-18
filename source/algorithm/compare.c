@@ -3,6 +3,10 @@
 #include <math.h>
 #include <stdbool.h>
 
+/*
+    No fuzziness. Works for images that have been scaled with a nearest
+    neighbor algorithm.
+*/
 bool compare_pixel_exact(unsigned char** pixel_1, unsigned char** pixel_2)
 {
     for (int channel = 0; channel < 3; channel++) {
@@ -15,6 +19,13 @@ bool compare_pixel_exact(unsigned char** pixel_1, unsigned char** pixel_2)
     return false;
 }
 
+/*
+    Allow some leeway in the R, G, and B values of each pixel. This is strictly
+    a per-channel affair – nothing along the lines of color distance – so its
+    fanciness is limited. Useful for images that appear to have been scaled
+    with a nearest neighbor algorithm, but apparently haven't – such as
+    "tests/254x231 fuzzy.png".
+*/
 int compare_pixel_fuzzy_fuzziness;
 bool compare_pixel_fuzzy(unsigned char** pixel_1, unsigned char** pixel_2)
 {
@@ -28,4 +39,5 @@ bool compare_pixel_fuzzy(unsigned char** pixel_1, unsigned char** pixel_2)
     return false;
 }
 
+// Setting this determines the pixel comparison algorithm used in contrast.c.
 bool (*compare_pixel)(unsigned char**, unsigned char**) = compare_pixel_exact;

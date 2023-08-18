@@ -1,3 +1,6 @@
+/*
+    Determine a single dimension at a time based on a contrast array.
+*/
 #ifndef DIMENSIONS_H
 #define DIMENSIONS_H
 

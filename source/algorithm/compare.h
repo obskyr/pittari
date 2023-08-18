@@ -1,3 +1,7 @@
+/*
+    Functions for comparing two pixels to determine whether the second pixel
+    should be deemed to start a new row/column in the image at 1:1 scale.
+*/
 #ifndef COMPARE_H
 #define COMPARE_H
 

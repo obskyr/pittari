@@ -1,3 +1,9 @@
+/*
+    Functions that condense the rows and columns in a scaled image (or a series
+    of images that were scaled identically) into an array each that signifies
+    at which row/column in the scaled image a new row/column starts in the
+    original 1:1 image.
+*/
 #ifndef CONTRAST_H
 #define CONTRAST_H
 

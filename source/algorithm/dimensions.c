@@ -6,6 +6,10 @@
 static inline void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest);
 static inline void count_run(size_t run_length, size_t thinnest, size_t* num_thinnest, size_t* num_second_thinnest);
 
+/*
+    Determine one dimension (i.e. width or height) based on a previously
+    determined array of contrasts.
+*/
 size_t determine_dimension(size_t contrasts_size, bool contrasts[])
 {
     size_t num_runs = 0;
@@ -56,6 +60,11 @@ static inline void register_run(size_t run_length, size_t* num_runs, size_t* thi
 }
 
 /*
+    Determine one dimension (i.e. width or height) based on a previously
+    determined array of contrasts. There may be swaths of uncertainty in the
+    array (that is to say, longer runs of identical pixels, where it was not
+    possible to determine where the rows/columns start and end).
+
     The way this algorithm currently works is by counting the number of known
     pixels and dividing that by how many pixels they take up in the scaled
     image, thus averaging out to an estimated scale based on what we do know.

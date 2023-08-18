@@ -1,3 +1,6 @@
+/*
+    The public interface for the unscaling algorithm.
+*/
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
