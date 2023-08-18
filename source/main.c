@@ -2,9 +2,108 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include <argp.h>
 #include <MagickWand/MagickWand.h>
+
+#define _STRINGIFY(s) #s
+#define STRINGIFY(s) _STRINGIFY(s)
+
+// When --inexact is used. By default, no fuzziness is used.
+#define DEFAULT_FUZZINESS 10
+
+const char* argp_program_version = "fjonk v0.1-alpha";
+const char* argp_program_bug_address = "https://github.com/obskyr/TODO/issues";
+static char doc[] = "\nScans a series of screenshots that have been scaled up to determine what their original resolution (with square 1x1 pixels) were. Combine with a program to scale them down and then up to your desired resolution to re-scale screenshots that were taken at a wonky scale! Multiple screenshots can be supplied (as long as they're of the same resolution and were taken in the same program) to make the result more likely to be accurate (though most likely, one will suffice).";
+static char args_doc[] = "<SCREENSHOT IMAGE...>";
+static struct argp_option options[] = {
+    {0, 0, 0, 0, "Algorithm options:"},
+    {"inexact", 'i', 0, 0, "Allow for some leeway when scanning for differing pixels. Useful for, for example, PlayStation 1 screenshots."},
+    {"leeway", 'l', "leeway", 0, "How much an R, G, or B value can differ when using --inexact (0-255). " STRINGIFY(DEFAULT_FUZZINESS) " by default."},
+
+    {0, 0, 0, 0, "Output options:"},
+    {"custom", 'c', "format", 0, "Print the data in a custom format you supply and exit. Available variables are {width}, {height}, {scaled_width}, {scaled_height}, {x_scale}, {y_scale}, and {par}."},
+    {"par", 'p', 0, 0, "Print the determined pixel aspect ratio in the format \"{par}\" and exit."},
+    {"resolution", 'r', 0, 0, "Print the determined resolution in the format \"{width}x{height}\" and exit."},
+    {"scale", 's', 0, 0, "Print the determined scale in the format \"{xscale}x{yscale}\" and exit."},
+
+    {0, 0, 0, 0, "Help:", -1},
+    {"help", 'h', 0, 0, "Print this help page and exit."},
+    {"version", 'v', 0, 0, "Print the program name and version and exit."},
+    {0, 'V', 0, OPTION_ALIAS},
+
+    {0}
+};
+
+struct options {
+    bool inexact;
+    int leeway;
+
+    bool format_specified;
+    char* format;
+
+    size_t num_image_paths;
+    char** image_paths;
+};
+
+static int parse_options(int key, char *arg, struct argp_state *state) {
+    struct options* options = state->input;
+    switch (key) {
+        case 'i': options->inexact = true; break;
+        case 'l':
+            options->leeway = atoi(arg);
+            if (options->leeway == 0 && strcmp(arg, "0") == -1) {
+                fprintf(stderr, "ERROR: Invalid --leeway argument: \"%s\"\n", arg);
+                exit(-1);
+            }
+            break;
+
+        case 'c':
+            options->format_specified = true;
+            options->format = arg;
+            break;
+        case 'p':
+            options->format_specified = true;
+            options->format = "{par}";
+            break;
+        case 'r':
+            options->format_specified = true;
+            options->format = "{width}x{height}";
+            break;
+        case 's':
+            options->format_specified = true;
+            options->format = "{x_scale}x{y_scale}";
+            break;
+
+        case 'h':
+            argp_state_help(state, stdout, ARGP_HELP_SHORT_USAGE | ARGP_HELP_DOC | ARGP_HELP_LONG | ARGP_HELP_BUG_ADDR | ARGP_HELP_EXIT_OK);
+            break;
+        
+        case 'v':
+            printf("%s\n", argp_program_version);
+            exit(0);
+            break;
+
+        case ARGP_KEY_ARGS:
+            options->num_image_paths = state->argc - state->next;
+            options->image_paths = state->argv + state->next;
+            break;
+        
+        case ARGP_KEY_NO_ARGS:
+            argp_state_help(state, stdout, ARGP_HELP_SHORT_USAGE | ARGP_HELP_PRE_DOC | ARGP_HELP_EXIT_ERR);
+            break;
+
+        case ARGP_KEY_ARG: return ARGP_ERR_UNKNOWN; break;
+        default: return ARGP_ERR_UNKNOWN;
+    }   
+    return 0;
+}
+
+static struct argp argp = {options, parse_options, args_doc, doc, 0, 0, 0};
 
 #define ThrowWandException(wand) \
 { \
@@ -28,7 +127,7 @@ bool compare_pixel_exact(unsigned char** pixel_1, unsigned char** pixel_2)
     return false;
 }
 
-int fuzziness = 10;
+int fuzziness;
 bool compare_pixel_fuzzy(unsigned char** pixel_1, unsigned char** pixel_2)
 {
     for (int channel = 0; channel < 3; channel++) {
@@ -45,16 +144,16 @@ bool (*compare_pixel)(unsigned char**, unsigned char**) = compare_pixel_exact;
 
 int main(int argc, char **argv)
 {
-    if (argc == 1) {
-        fprintf(
-            stdout,
-            "Usage: %s <screenshot images...>\n"
-            "\n"
-            "TODO: Description of the program's operation here.",
-            argv[0]
-        );
-        exit(0);
-    }
+    struct options options;
+
+    options.inexact = false;
+    options.leeway = DEFAULT_FUZZINESS;
+    options.format_specified = false;
+    options.format = 0;
+
+    argp_parse(&argp, argc, argv, ARGP_NO_HELP, 0, &options);
+
+    fuzziness = options.leeway;
 
     MagickWandGenesis();
 
@@ -112,6 +211,7 @@ int main(int argc, char **argv)
     printf("== RESULT (height) ==\n\n");
 #endif
 
+    // TODO: Implement format.
     printf("Original resolution: %zu x %zu\n", calculated_width, calculated_height);
     printf("Scale:               %lg x %lg\n", calculated_x_scale, calculated_y_scale);
     printf("Pixel aspect ratio:  %lg\n", pixel_aspect_ratio);
