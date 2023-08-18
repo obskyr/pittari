@@ -187,7 +187,7 @@ size_t determine_dimension(size_t contrasts_size, bool contrasts[])
     }
 }
 
-void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest)
+static inline void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest)
 {
     (*num_runs)++;
     if (run_length < *thinnest) {
@@ -229,21 +229,11 @@ size_t determine_dimension_by_certain_delineations(size_t contrasts_size, bool c
     size_t i;
     for (i = 1; i < contrasts_size; i++) {
         if (contrasts[i]) {
-            size_t run_length = i - run_start;
-            if (run_length == thinnest) {
-                num_thinnest++;
-            } else if (run_length == thinnest + 1) {
-                num_second_thinnest++;
-            }
+            count_run(i - run_start, thinnest, &num_thinnest, &num_second_thinnest);
             run_start = i;
         }
     }
-    size_t run_length = i - run_start;
-    if (run_length == thinnest) {
-        num_thinnest++;
-    } else if (run_length == thinnest + 1) {
-        num_second_thinnest++;
-    }
+    count_run(i - run_start, thinnest, &num_thinnest, &num_second_thinnest);
 
     // We could have tallied this up in the first place instead of counting
     // the thinnest and second-thinnest pixels separately, but this is
@@ -254,4 +244,13 @@ size_t determine_dimension_by_certain_delineations(size_t contrasts_size, bool c
 
     double determined_scale = (double) certain_pixels_size / (double) num_certain_pixels;
     return (size_t) (contrasts_size / determined_scale + 0.5);
+}
+
+static inline void count_run(size_t run_length, size_t thinnest, size_t* num_thinnest, size_t* num_second_thinnest)
+{
+    if (run_length == thinnest) {
+        (*num_thinnest)++;
+    } else if (run_length == thinnest + 1) {
+        (*num_second_thinnest)++;
+    }
 }

@@ -13,7 +13,8 @@ void update_column_contrasts_from_pixels(size_t width, bool column_contrasts[], 
 void update_row_contrasts_from_pixels(size_t width, size_t height, bool row_contrasts[], unsigned char* pixels);
 
 size_t determine_dimension(size_t contrasts_size, bool contrasts[]);
-void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest);
+static inline void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest);
 size_t determine_dimension_by_certain_delineations(size_t contrasts_size, bool contrasts[], size_t thinnest);
+static inline void count_run(size_t run_length, size_t thinnest, size_t* num_thinnest, size_t* num_second_thinnest);
 
 #endif
