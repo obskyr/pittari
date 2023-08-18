@@ -16,6 +16,33 @@
   exit(-1); \
 }
 
+bool compare_pixel_exact(unsigned char** pixel_1, unsigned char** pixel_2)
+{
+    for (int channel = 0; channel < 3; channel++) {
+        if (*(*pixel_1)++ != *(*pixel_2)++) {
+            *pixel_1 += 3 - channel - 1;
+            *pixel_2 += 3 - channel - 1;
+            return true;
+        }
+    }
+    return false;
+}
+
+int fuzziness = 10;
+bool compare_pixel_fuzzy(unsigned char** pixel_1, unsigned char** pixel_2)
+{
+    for (int channel = 0; channel < 3; channel++) {
+        if (abs((int) *(*pixel_1)++ - (int) *(*pixel_2)++) > fuzziness) {
+            *pixel_1 += 3 - channel - 1;
+            *pixel_2 += 3 - channel - 1;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool (*compare_pixel)(unsigned char**, unsigned char**) = compare_pixel_exact;
+
 int main(int argc, char **argv)
 {
     if (argc == 1) {
@@ -65,11 +92,25 @@ int main(int argc, char **argv)
         wand = DestroyMagickWand(wand);
     }
 
+#ifdef DEBUG
+    printf("== COLUMNS (width) ==\n\n");
+#endif
+
     size_t calculated_width = determine_dimension(width, column_contrasts);
+
+#ifdef DEBUG
+    printf("== ROWS (height) ==\n\n");
+#endif
+
     size_t calculated_height = determine_dimension(height, row_contrasts);
+
     double calculated_x_scale = (double) width / (double) calculated_width;
     double calculated_y_scale = (double) height / (double) calculated_height;
     double pixel_aspect_ratio = calculated_x_scale / calculated_y_scale;
+
+#ifdef DEBUG
+    printf("== RESULT (height) ==\n\n");
+#endif
 
     printf("Original resolution: %zu x %zu\n", calculated_width, calculated_height);
     printf("Scale:               %lg x %lg\n", calculated_x_scale, calculated_y_scale);
@@ -115,13 +156,8 @@ void update_column_contrasts_from_pixels(size_t width, bool column_contrasts[], 
                 continue;
             }
 
-            for (int channel = 0; channel < 3; channel++) {
-                if (*left_pixel++ != *cur_pixel++) {
-                    left_pixel += 3 - channel - 1;
-                    cur_pixel += 3 - channel - 1;
-                    column_contrasts[x] = true;
-                    break;
-                }
+            if (compare_pixel(&left_pixel, &cur_pixel)) {
+                column_contrasts[x] = true;
             }
         }
         // Currently, left_pixel is the rightmost pixel in the previous
@@ -144,16 +180,13 @@ void update_row_contrasts_from_pixels(size_t width, size_t height, bool row_cont
         }
 
         for (size_t x = 0; x < width; x++) {
-            for (int channel = 0; channel < 3; channel++) {
-                if (*above_pixel++ != *cur_pixel++) {
-                    above_pixel = pixels + 3 * width * y;
-                    cur_pixel = pixels + 3 * width * (y + 1);
-                    row_contrasts[y] = true;
-                    goto next_row;
-                }
+            if (compare_pixel(&above_pixel, &cur_pixel)) {
+                above_pixel = pixels + 3 * width * y;
+                cur_pixel = pixels + 3 * width * (y + 1);
+                row_contrasts[y] = true;
+                break;
             }
         }
-        next_row:
     }
 }
 
@@ -172,6 +205,10 @@ size_t determine_dimension(size_t contrasts_size, bool contrasts[])
         }
     }
     register_run(i - run_start, &num_runs, &thinnest, &second_thinnest, &third_thinnest);
+
+#ifdef DEBUG
+    printf("Thinnest: %zu\nSecond thinnest: %zu\nThird thinnest: %zu\n\n", thinnest, second_thinnest, third_thinnest);
+#endif
 
     if (second_thinnest == SIZE_MAX) {
         // The image has completely uniform pixels in this dimension.
