@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 PROGRAM_FILENAME := how-many-pixels
-BUILD_DIR := build/
+BUILD_DIR := build
 
 SOURCE_FILES := source/main.c
 
@@ -10,16 +10,24 @@ INCLUDE := -I/usr/include
 LIBRARY_DIRS := 
 LIBRARIES := 
 
+# TODO: Find ImageMagick directories dynamically.
+MAGICK_CODERS_PATH := /mingw64/lib/ImageMagick-7.1.1/modules-Q16HDRI/coders
+
 ifeq ($(OS), Windows_NT)
 	PROGRAM_FILENAME := $(PROGRAM_FILENAME).exe
 	DEFS := -DWIN64
 	INCLUDE := $(INCLUDE) -I./argp-standalone
 	LIBRARY_DIRS := $(LIBRARY_DIRS) -L./argp-standalone/build
 	LIBRARIES := $(LIBRARIES) -largp
-endif
-PROGRAM := $(BUILD_DIR)$(PROGRAM_FILENAME)
 
-all: $(PROGRAM)
+	MAGICK_CODERS_DIR := $(BUILD_DIR)/coders
+	MAGICK_CODERS_NEEDED := bmp gif jpeg png tiff webp
+	MAGICK_CODERS_NEEDED := $(patsubst %, %.dll, $(MAGICK_CODERS_NEEDED)) $(patsubst %, %.la, $(MAGICK_CODERS_NEEDED))
+	MAGICK_CODERS_NEEDED := $(patsubst %, $(MAGICK_CODERS_DIR)/%, $(MAGICK_CODERS_NEEDED))
+endif
+PROGRAM := $(BUILD_DIR)/$(PROGRAM_FILENAME)
+
+all: $(PROGRAM) $(MAGICK_CODERS_NEEDED)
 
 clean:
 	rm -f $(PROGRAM)
@@ -36,4 +44,8 @@ $(PROGRAM): ./argp-standalone/build/libargp.a
 	meson setup build/ && \
 	cd build/ && \
 	meson compile
+
+$(MAGICK_CODERS_DIR)/%: $(MAGICK_CODERS_PATH)/%
+	@mkdir -p $(@D)
+	cp "$^" "$(@D)/"
 endif
