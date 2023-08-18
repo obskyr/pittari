@@ -11,6 +11,7 @@
 #include <argp.h>
 #include <MagickWand/MagickWand.h>
 #include "algorithm/compare.h"
+#include "algorithm/dimensions.h"
 #include "algorithm/interface.h"
 #include "cli/format.h"
 
@@ -28,6 +29,7 @@ static struct argp_option options[] = {
     {0, 0, 0, 0, "Algorithm options:"},
     {"inexact", 'i', 0, 0, "Allow for some leeway when scanning for differing pixels. Useful for, for example, PlayStation 1 screenshots."},
     {"leeway", 'l', "leeway", 0, "How much an R, G, or B value can differ when using --inexact (0-255). " STRINGIFY(DEFAULT_FUZZINESS) " by default."},
+    {"nearest-neighbor-variation", 'n', "variation", 0, "With nearest-neighbor scaling to a non-integer factor, pixels will only vary by 1 pixel in size in each dimension. However, if nearest-neighbor scaling has been applied multiple times to an image, this variation may be larger. For such images, this option lets you set the maximum variation in width/height of rows/columns. 1 by default."},
 
     {0, 0, 0, 0, "Output options:"},
     {"custom", 'c', "format", 0, "Print the data in a custom format you supply and exit. Available variables are {width}, {height}, {scaled_width}, {scaled_height}, {x_scale}, {y_scale}, and {par}."},
@@ -46,6 +48,7 @@ static struct argp_option options[] = {
 struct options {
     bool inexact;
     int leeway;
+    int nearest_neighbor_max_variation;
 
     bool format_specified;
     char* format;
@@ -60,8 +63,15 @@ static int parse_options(int key, char *arg, struct argp_state *state) {
         case 'i': options->inexact = true; break;
         case 'l':
             options->leeway = atoi(arg);
-            if (options->leeway == 0 && strcmp(arg, "0") != 0) {
+            if ((options->leeway == 0 && strcmp(arg, "0") != 0) || options->leeway < 0) {
                 fprintf(stderr, "ERROR: Invalid --leeway argument: \"%s\"\n", arg);
+                exit(-1);
+            }
+            break;
+        case 'n':
+            options->nearest_neighbor_max_variation = atoi(arg);
+            if ((options->nearest_neighbor_max_variation == 0 && strcmp(arg, "0") != 0) || options->nearest_neighbor_max_variation < 0) {
+                fprintf(stderr, "ERROR: Invalid --nearest-neighbor-variation argument: \"%s\"\n", arg);
                 exit(-1);
             }
             break;
@@ -115,6 +125,7 @@ int main(int argc, char **argv)
 
     options.inexact = false;
     options.leeway = DEFAULT_FUZZINESS;
+    options.nearest_neighbor_max_variation = 1;
     options.format_specified = false;
     options.format = 0;
 
@@ -122,6 +133,7 @@ int main(int argc, char **argv)
 
     if (options.inexact) {compare_pixel = compare_pixel_fuzzy;}
     compare_pixel_fuzzy_fuzziness = options.leeway;
+    nearest_neighbor_max_variation = options.nearest_neighbor_max_variation;
 
 #ifdef WIN64
     // Here's the skinny: ImageMagick is not at all friendly to portable

@@ -2,9 +2,14 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
-static inline void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest);
-static inline void count_run(size_t run_length, size_t thinnest, size_t* num_thinnest, size_t* num_second_thinnest);
+static inline void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t *thickest);
+static inline void count_run(size_t run_length, size_t thinnest, size_t* num_certain_pixels, size_t* certain_pixels_size);
+
+int nearest_neighbor_max_variation = 1;
 
 /*
     Determine one dimension (i.e. width or height) based on a previously
@@ -14,26 +19,22 @@ size_t determine_dimension(size_t contrasts_size, bool contrasts[])
 {
     size_t num_runs = 0;
     size_t thinnest = SIZE_MAX;
-    size_t second_thinnest = SIZE_MAX;
-    size_t third_thinnest = SIZE_MAX;
+    size_t thickest = 0;
     size_t run_start = 0;
     size_t i;
     for (i = 1; i < contrasts_size; i++) {
         if (contrasts[i]) {
-            register_run(i - run_start, &num_runs, &thinnest, &second_thinnest, &third_thinnest);
+            register_run(i - run_start, &num_runs, &thinnest, &thickest);
             run_start = i;
         }
     }
-    register_run(i - run_start, &num_runs, &thinnest, &second_thinnest, &third_thinnest);
+    register_run(i - run_start, &num_runs, &thinnest, &thickest);
 
 #ifdef DEBUG
-    printf("Thinnest: %zu\nSecond thinnest: %zu\nThird thinnest: %zu\n\n", thinnest, second_thinnest, third_thinnest);
+    printf("Thinnest: %zu\nThickest: %zu\n\n", thinnest, thickest);
 #endif
 
-    if (second_thinnest == SIZE_MAX) {
-        // The image has completely uniform pixels in this dimension.
-        return num_runs;
-    } else if (second_thinnest == thinnest + 1 && third_thinnest == SIZE_MAX) {
+    if (thickest - thinnest <= nearest_neighbor_max_variation) {
         // The detection has succeeded in identifying every single point where
         // the image switches to a new pixel in this dimension.
         // Put another way, there were no swaths of the same exact color
@@ -44,18 +45,14 @@ size_t determine_dimension(size_t contrasts_size, bool contrasts[])
     }
 }
 
-static inline void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t* second_thinnest, size_t* third_thinnest)
+static inline void register_run(size_t run_length, size_t* num_runs, size_t* thinnest, size_t *thickest)
 {
     (*num_runs)++;
     if (run_length < *thinnest) {
-        *third_thinnest = *second_thinnest;
-        *second_thinnest = *thinnest;
         *thinnest = run_length;
-    } else if (run_length > *thinnest && run_length < *second_thinnest) {
-        *third_thinnest = *second_thinnest;
-        *second_thinnest = run_length;
-    } else if (run_length > *second_thinnest && run_length < *third_thinnest) {
-        *third_thinnest = run_length;
+    }
+    if (run_length > *thickest) {
+        *thickest = run_length;
     }
 }
 
@@ -85,34 +82,26 @@ static inline void register_run(size_t run_length, size_t* num_runs, size_t* thi
 */
 size_t determine_dimension_by_certain_delineations(size_t contrasts_size, bool contrasts[], size_t thinnest)
 {
-    size_t num_thinnest = 0;
-    size_t num_second_thinnest = 0;
+    size_t num_certain_pixels = 0;
+    size_t certain_pixels_size = 0;
     size_t run_start = 0;
     size_t i;
     for (i = 1; i < contrasts_size; i++) {
         if (contrasts[i]) {
-            count_run(i - run_start, thinnest, &num_thinnest, &num_second_thinnest);
+            count_run(i - run_start, thinnest, &num_certain_pixels, &certain_pixels_size);
             run_start = i;
         }
     }
-    count_run(i - run_start, thinnest, &num_thinnest, &num_second_thinnest);
-
-    // We could have tallied this up in the first place instead of counting
-    // the thinnest and second-thinnest pixels separately, but this is
-    // easier to change to a different approach later (should it be needed)
-    // and should only constitute a negligible performance hit.
-    size_t certain_pixels_size = num_thinnest * thinnest + num_second_thinnest * (thinnest + 1);
-    size_t num_certain_pixels = num_thinnest + num_second_thinnest;
+    count_run(i - run_start, thinnest, &num_certain_pixels, &certain_pixels_size);
 
     double determined_scale = (double) certain_pixels_size / (double) num_certain_pixels;
     return (size_t) (contrasts_size / determined_scale + 0.5);
 }
 
-static inline void count_run(size_t run_length, size_t thinnest, size_t* num_thinnest, size_t* num_second_thinnest)
+static inline void count_run(size_t run_length, size_t thinnest, size_t* num_certain_pixels, size_t* certain_pixels_size)
 {
-    if (run_length == thinnest) {
-        (*num_thinnest)++;
-    } else if (run_length == thinnest + 1) {
-        (*num_second_thinnest)++;
+    if (run_length - thinnest <= nearest_neighbor_max_variation) {
+        (*num_certain_pixels)++;
+        (*certain_pixels_size) += run_length;
     }
 }
