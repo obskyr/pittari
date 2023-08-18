@@ -23,4 +23,12 @@ static inline void register_run(size_t run_length, size_t* num_runs, size_t* thi
 size_t determine_dimension_by_certain_delineations(size_t contrasts_size, bool contrasts[], size_t thinnest);
 static inline void count_run(size_t run_length, size_t thinnest, size_t* num_thinnest, size_t* num_second_thinnest);
 
+void print_with_format(
+    const char* format,
+    size_t scaled_width, size_t scaled_height,
+    size_t determined_width, size_t determined_height,
+    double determined_x_scale, double determined_y_scale,
+    double pixel_aspect_ratio
+);
+
 #endif
