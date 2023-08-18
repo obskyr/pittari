@@ -1,0 +1,6 @@
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+*.c text eol=lf linguist-language=c
+*.h text eol=lf linguist-language=c
+Makefile text eol=lf linguist-language=make
