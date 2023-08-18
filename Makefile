@@ -1,9 +1,10 @@
 .PHONY: all clean
 
 PROGRAM_FILENAME := how-many-pixels
+SOURCE_DIR := source
 BUILD_DIR := build
 
-SOURCE_FILES := source/main.c
+SOURCE_FILES := $(shell find "$(SOURCE_DIR)/" -type f -name "*.c")
 
 DEFS := 
 INCLUDE := -I/usr/include
@@ -34,7 +35,7 @@ clean:
 
 $(PROGRAM): $(SOURCE_FILES)
 	@mkdir -p $(BUILD_DIR)
-	gcc -Wall $(shell MagickWand-config --cflags) $(INCLUDE) $(DEFS) $(SOURCE_FILES) -o $(PROGRAM) $(shell MagickWand-config --ldflags) $(LIBRARY_DIRS) $(LIBRARIES)
+	gcc -Wall $(shell MagickWand-config --cflags) -I$(SOURCE_DIR) $(INCLUDE) $(DEFS) $(SOURCE_FILES) -o $(PROGRAM) $(shell MagickWand-config --ldflags) $(LIBRARY_DIRS) $(LIBRARIES)
 
 ifeq ($(OS), Windows_NT)
 $(PROGRAM): ./argp-standalone/build/libargp.a
