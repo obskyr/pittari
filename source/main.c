@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WIN64
+#include <Windows.h>
+#endif
+
 #include <argp.h>
 #include <MagickWand/MagickWand.h>
 
@@ -153,38 +157,92 @@ int main(int argc, char **argv)
 
     argp_parse(&argp, argc, argv, ARGP_NO_HELP, 0, &options);
 
+    if (options.inexact) {compare_pixel = compare_pixel_fuzzy;}
     fuzziness = options.leeway;
 
+#ifdef WIN64
+    // Here's the skinny: ImageMagick is not at all friendly to portable
+    // programs. It packages the bits that handle specific file formats in
+    // separate DLLs, and those DLLs are located at runtime via an environment
+    // variable called "MAGICK_CODER_MODULE_PATH". We don't want our users to
+    // have to worry about that, so we pack the DLLs with the distributed
+    // executable and set the environment variable programmatically here.
+    // …I don't know why I chose C for this project, man.
+    char putenv_directive[MAX_PATH + 25 + 1] = "MAGICK_CODER_MODULE_PATH=";
+    DWORD length = GetModuleFileName(NULL, putenv_directive + 25, MAX_PATH + 1);
+    for (size_t i = 25 + length; i >= 25; i--) {
+        if (putenv_directive[i] == '\\') {
+            putenv_directive[i] = 0;
+            break;
+        }
+    }
+    strcat(putenv_directive, "\\coders");
+    putenv(putenv_directive);
+#endif
+
+    size_t scaled_width;
+    size_t scaled_height;
+    size_t determined_width;
+    size_t determined_height;
+
+    determine_dimensions(
+        options.num_image_paths, options.image_paths,
+        &scaled_width, &scaled_height,
+        &determined_width, &determined_height
+    );
+
+    double determined_x_scale = (double) scaled_width / (double) determined_width;
+    double determined_y_scale = (double) scaled_height / (double) determined_height;
+    double pixel_aspect_ratio = determined_x_scale / determined_y_scale;
+
+#ifdef DEBUG
+    printf("== RESULT ==\n\n");
+#endif
+
+    // TODO: Implement format.
+    printf("Original resolution: %zu x %zu\n", determined_width, determined_height);
+    printf("Scale:               %lg x %lg\n", determined_x_scale, determined_y_scale);
+    printf("Pixel aspect ratio:  %lg\n", pixel_aspect_ratio);
+
+    return 0;
+}
+
+void determine_dimensions(
+    size_t num_image_paths, char** image_paths,
+    size_t* scaled_width, size_t* scaled_height,
+    size_t* determined_width, size_t* determined_height
+)
+{
     MagickWandGenesis();
 
     MagickWand* wand = NewMagickWand();
-    MagickBooleanType status = MagickReadImage(wand, argv[1]);
+    MagickBooleanType status = MagickReadImage(wand, image_paths[0]);
     if (status == MagickFalse) {ThrowWandException(wand);}
     MagickResetIterator(wand);
     MagickNextImage(wand);
-    size_t width = MagickGetImageWidth(wand);
-    size_t height = MagickGetImageHeight(wand);
-    unsigned char* pixels = (unsigned char*) malloc(width * height * 3 * sizeof(unsigned char));
-    bool* column_contrasts = (bool*) calloc(width, sizeof(bool));
-    bool* row_contrasts = (bool*) calloc(height, sizeof(bool));
-    // Since the leftmost / top pixel in a scaled image always starts a new
-    // pixel in the source image.
+    *scaled_width = MagickGetImageWidth(wand);
+    *scaled_height = MagickGetImageHeight(wand);
+    unsigned char* pixels = (unsigned char*) malloc(*scaled_width * *scaled_height * 3 * sizeof(unsigned char));
+    bool* column_contrasts = (bool*) calloc(*scaled_width, sizeof(bool));
+    bool* row_contrasts = (bool*) calloc(*scaled_height, sizeof(bool));
+    // Since the leftmost / top pixel in a scaled image always starts
+    // a new pixel in the source image.
     column_contrasts[0] = true;
     row_contrasts[0] = true;
 
-    update_contrasts_from_wand(width, column_contrasts, height, row_contrasts, pixels, wand);
+    update_contrasts_from_wand(*scaled_width, column_contrasts, *scaled_height, row_contrasts, pixels, wand);
 
     wand = DestroyMagickWand(wand);
 
-    for (size_t i = 2; i < argc; i++) {
-        char* cur_path = argv[i];
+    for (size_t i = 1; i < num_image_paths; i++) {
+        char* cur_path = image_paths[i];
         wand = NewMagickWand();
         MagickBooleanType status = MagickReadImage(wand, cur_path);
         if (status == MagickFalse) {ThrowWandException(wand);}
 
-        int error = update_contrasts_from_wand(width, column_contrasts, height, row_contrasts, pixels, wand);
+        int error = update_contrasts_from_wand(*scaled_width, column_contrasts, *scaled_height, row_contrasts, pixels, wand);
         if (error) {
-            fprintf(stderr, "ERROR: Screenshots not of the same resolution (\"%s\" differs).", argv[1]);
+            fprintf(stderr, "ERROR: Screenshots not of the same resolution (\"%s\" differs).", image_paths[i]);
             exit(-1);
         }
 
@@ -195,29 +253,15 @@ int main(int argc, char **argv)
     printf("== COLUMNS (width) ==\n\n");
 #endif
 
-    size_t calculated_width = determine_dimension(width, column_contrasts);
+    *determined_width = determine_dimension(*scaled_width, column_contrasts);
 
 #ifdef DEBUG
     printf("== ROWS (height) ==\n\n");
 #endif
 
-    size_t calculated_height = determine_dimension(height, row_contrasts);
-
-    double calculated_x_scale = (double) width / (double) calculated_width;
-    double calculated_y_scale = (double) height / (double) calculated_height;
-    double pixel_aspect_ratio = calculated_x_scale / calculated_y_scale;
-
-#ifdef DEBUG
-    printf("== RESULT (height) ==\n\n");
-#endif
-
-    // TODO: Implement format.
-    printf("Original resolution: %zu x %zu\n", calculated_width, calculated_height);
-    printf("Scale:               %lg x %lg\n", calculated_x_scale, calculated_y_scale);
-    printf("Pixel aspect ratio:  %lg\n", pixel_aspect_ratio);
+    *determined_height = determine_dimension(*scaled_height, row_contrasts);
 
     MagickWandTerminus();
-    return(0);
 }
 
 int update_contrasts_from_image(size_t width, bool column_contrasts[], size_t height, bool row_contrasts[], unsigned char pixels[], MagickWand* wand)

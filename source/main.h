@@ -7,6 +7,12 @@
 
 int main(int argc, char **argv);
 
+void determine_dimensions(
+    size_t num_image_paths, char** image_paths,
+    size_t* scaled_width, size_t* scaled_height,
+    size_t* determined_width, size_t* determined_height
+);
+
 int update_contrasts_from_wand(size_t width, bool column_contrasts[], size_t height, bool row_contrasts[], unsigned char pixels[], MagickWand* wand);
 int update_contrasts_from_image(size_t width, bool column_contrasts[], size_t height, bool row_contrasts[], unsigned char pixels[], MagickWand* wand);
 void update_column_contrasts_from_pixels(size_t width, bool column_contrasts[], size_t height, unsigned char* pixels);
