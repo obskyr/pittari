@@ -15,8 +15,8 @@ Have you ever taken a screenshot in an emulator that *just wasn't scaled right?*
 <h3 align="center">After Pittari Pixels</h3>
 
 <div align="center">
-    <img src="tests/misc/180x240%201x.png" style="vertical-align: middle"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <img src="tests/misc/248x215%20fuzzy%201x.png" style="vertical-align: middle"/>
+    <img src="tests/misc/180x240%201x.png" align="middle" style="vertical-align: middle"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <img src="tests/misc/248x215%20fuzzy%201x.png" align="middle" style="vertical-align: middle"/>
 </div>
 &nbsp;
 
