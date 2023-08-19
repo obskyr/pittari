@@ -25,9 +25,8 @@ Have you ever taken a screenshot in an emulator that *just wasn't scaled right?*
 ## Installation
 
 1. Obtain the program!
-    * **[Download for Windows (x64)](TODO)**
-    * **[Download for Linux (x64)](TODO)**
-    * See *[How to build](#how-to-build)* if you are on a 32-bit system.
+    * **[Download for Windows (x64)](https://github.com/obskyr/pittari/releases/latest/download/pittari_windows_x64.zip)**
+    * See *[How to build](#how-to-build)* if you are using Linux or a 32-bit system.
 2. Extract the files to their own folder, wherever you'd like.
 3. On Windows, you may want to [add said folder to your PATH.](https://stackoverflow.com/a/44272417) This will both allow you to run the program from anywhere, and to copy the EXE (without its accompanying DLLs) to anywhere you'd like.
 
