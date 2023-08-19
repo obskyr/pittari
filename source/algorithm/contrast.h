@@ -9,7 +9,12 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#ifdef IMAGEMAGICK_7
 #include <MagickWand/MagickWand.h>
+#endif
+#ifdef IMAGEMAGICK_6
+#include <wand/MagickWand.h>
+#endif
 
 int update_contrasts_from_wand(size_t width, bool column_contrasts[], size_t height, bool row_contrasts[], unsigned char pixels[], MagickWand* wand);
 int update_contrasts_from_image(size_t width, bool column_contrasts[], size_t height, bool row_contrasts[], unsigned char pixels[], MagickWand* wand);

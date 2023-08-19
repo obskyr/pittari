@@ -5,11 +5,17 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #ifdef WIN64
 #include <Windows.h>
 #endif
 #include <argp.h>
+#ifdef IMAGEMAGICK_7
 #include <MagickWand/MagickWand.h>
+#endif
+#ifdef IMAGEMAGICK_6
+#include <wand/MagickWand.h>
+#endif
 #include "algorithm/compare.h"
 #include "algorithm/dimensions.h"
 #include "algorithm/interface.h"

@@ -2,7 +2,12 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#ifdef IMAGEMAGICK_7
 #include <MagickWand/MagickWand.h>
+#endif
+#ifdef IMAGEMAGICK_6
+#include <wand/MagickWand.h>
+#endif
 #include "algorithm/contrast.h"
 #include "algorithm/dimensions.h"
 

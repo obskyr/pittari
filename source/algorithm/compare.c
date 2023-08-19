@@ -1,7 +1,7 @@
 #include "algorithm/compare.h"
 
-#include <math.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 /*
     No fuzziness. Works for images that have been scaled with a nearest
