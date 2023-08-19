@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-PROGRAM_FILENAME := how-many-pixels
+PROGRAM_FILENAME := pittari
 SOURCE_DIR := source
 BUILD_DIR := build
 

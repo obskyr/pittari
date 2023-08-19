@@ -1,6 +1,26 @@
-# TODO
+# Pittari Pixels
 
-Have you ever taken a screenshot in an emulator that *just wasn't scaled right?* Wonky pixels of different sizes; mamma mia. TODO takes such screenshots and figures out what resolution they originally had for you, so that you can [resize](#resizing-screenshots) them to your heart's content.
+Have you ever taken a screenshot in an emulator that *just wasn't scaled right?* The infamous non-integer nearest-neighbor scale. Wonky pixels of different sizes; mamma mia. Pittari Pixels takes such screenshots and figures out their original resolution for you, so that you can [resize](#resizing-screenshots) them to your heart's content.
+
+<h3 align="center">Before Pittari Pixels</h3>
+
+<div align="center">
+    <img src="tests/180x240.png" style="height: 250px; vertical-align: middle; image-rendering: pixelated"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <img src="tests/248x215%20fuzzy.png" style="height: 250px; vertical-align: middle; image-rendering: pixelated"/>
+</div>
+&nbsp;
+
+> These screenshots are of 2D games, but Pittari Pixels works just as well for screenshots of video games in 3D.
+
+<h3 align="center">After Pittari Pixels</h3>
+
+<div align="center">
+    <img src="tests/misc/180x240%201x.png" style="vertical-align: middle"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <img src="tests/misc/248x215%20fuzzy%201x.png" style="vertical-align: middle"/>
+</div>
+&nbsp;
+
+> 1:1 square pixels are usually not correct for retro systems – for display purposes, these screenshots should be scaled up to a new size afterwards. See [the section on resizing](#resizing-screenshots) for more information.
 
 ## Installation
 
@@ -16,7 +36,7 @@ Have you ever taken a screenshot in an emulator that *just wasn't scaled right?*
 To determine the original resolution of a screenshot, **simply pass it as an argument:**
 
 ```console
-$ TODO spelunker-arcade.png 
+$ pittari spelunker-arcade.png 
 Original resolution: 384 x 256
 Scale:               2.67188 x 3
 Pixel aspect ratio:  0.890625
@@ -27,7 +47,7 @@ Pixel aspect ratio:  0.890625
 Screenshots with horizontal or vertical bands of solid colors may thwart the resolution detection. To make the result more likely to be accurate, **you can supply multiple screenshots** (as long as they were all originally scaled up in the same way):
 
 ```console
-$ TODO screenshot-1.png screenshot-2.png multiple-screenshots-in-one.gif
+$ pittari screenshot-1.png screenshot-2.png multiple-screenshots-in-one.gif
 Original resolution: 256 x 224
 Scale:               2.85547 x 2.5
 Pixel aspect ratio:  1.14219
@@ -38,23 +58,23 @@ Pixel aspect ratio:  1.14219
 The option `--print` (`-p`) lets you **print a single attribute** for programmatic parsing – `resolution` (or `r`), `scale` (or `s`), or `pixel aspect ratio` (or `par`).
 
 ```console
-$ TODO screenshot.png -p r # Original resolution
+$ pittari screenshot.png -p r # Original resolution
 256x240
 
-$ TODO screenshot.png -p s # Scale
+$ pittari screenshot.png -p s # Scale
 3.42969x3
 
-$ TODO screenshot.png -p par # Pixel aspect ratio
+$ pittari screenshot.png -p par # Pixel aspect ratio
 1.14323
 ```
 
 ---
 
-There is also `--custom` (`-c`) for entirely custom print formats, as well as further options for the resolution determination algorithm itself – see `todo --help`!
+There is also `--custom` (`-c`) for entirely custom print formats, as well as further options for the resolution determination algorithm itself – see `pittari --help`!
 
 ## Resizing screenshots
 
-To resize your wonkily scaled screenshots back to 1:1 square pixels, you can use [ImageMagick](https://imagemagick.org/script/download.php) (because [most GUI graphics editors do nearest-neighbor scaling wrong](tests/Notes%20on%20nearest-neighbor%20scaling/README.md)). The relevant command is `magick convert`, and make sure to supply `-filter point` (for nearest-neighbor scaling) and to add an exclamation mark after your desired dimensions (to turn off aspect ratio correction). If `TODO` gave you `256x224` as the resolution, for example:
+To resize your wonkily scaled screenshots back to 1:1 square pixels, you can use [ImageMagick](https://imagemagick.org/script/download.php) (because [most GUI graphics editors do nearest-neighbor scaling wrong](tests/Notes%20on%20nearest-neighbor%20scaling/README.md)). The relevant command is `magick convert`, and make sure to supply `-filter point` (for nearest-neighbor scaling) and to add an exclamation mark after your desired dimensions (to turn off aspect ratio correction). If `pittari` gave you `256x224` as the resolution, for example:
 
 ```bash
 magick convert input.png -filter point -resize 256x224! output.png
@@ -68,7 +88,7 @@ To scale an image up, make sure to scale it down *first* – that way, you're ac
 magick convert input.png -filter point -resize 256x224! -resize 878x672! output.png
 ```
 
-Until the advent of LCD displays, most systems did not have square pixels – they may be a bit wider than they are tall, or a bit taller than they are wide. This is called the “pixel aspect ratio” and is separate from its display aspect ratio (what you'd usually just call the “aspect ratio”). This is *crucial* to making emulated video (and thus screenshots) look correct, so yours truly heartily recommends taking it into account. It's as simple as multiplying the width of the image by a certain number while leaving the height untouched! [Pixel aspect ratios for various systems can be found here.](https://pineight.com/mw/page/Dot_clock_rates.xhtml)
+> Until the advent of LCD displays, most systems did not have square pixels – they may be a bit wider than they are tall, or a bit taller than they are wide. This is called the “pixel aspect ratio” and is separate from its display aspect ratio (what you'd usually just call the “aspect ratio”). This is *crucial* to making emulated video (and thus screenshots) look correct, so yours truly heartily recommends taking it into account. It's as simple as multiplying the width of the image by a certain number while leaving the height untouched! [Pixel aspect ratios for various systems can be found here (see the “PAR” column).](https://pineight.com/mw/page/Dot_clock_rates.xhtml)
 
 ## Limitations
 
@@ -94,14 +114,14 @@ Until the advent of LCD displays, most systems did not have square pixels – th
     pacman -S mingw-w64-x86_64-meson
 
     # Clone the necessary repositories…
-    git clone https://github.com/obskyr/TODO.git
-    cd TODO
+    git clone https://github.com/obskyr/pittari.git
+    cd pittari
     git clone https://github.com/argp-standalone/argp-standalone.git
 
     # Build!
     make
     ```
-3. And presto! The program is now at `build/TODO.exe`. If moving this elsewhere, make sure to copy the rest of the contents of the `build/` directory as well, or to add the directory to your PATH. This is required because `TODO.exe` must be able to find its DLLs.
+3. And presto! The program is now at `build/pittari.exe`. If moving this elsewhere, make sure to copy the rest of the contents of the `build/` directory as well, or to add the directory to your PATH. This is required for `pittari.exe` to be able to find its DLLs.
 
 <!-- Seems like *maybe* this isn't needed?
 
@@ -125,10 +145,10 @@ Until the advent of LCD displays, most systems did not have square pixels – th
     sudo apt install libmagickwand-dev
 
     # Clone the repository…
-    git clone https://github.com/obskyr/TODO.git
-    cd TODO
+    git clone https://github.com/obskyr/pittari.git
+    cd pittari
 
     # Build!
     make
     ```
-3. And presto! The program is now at `build/TODO`.
+3. And presto! The program is now at `build/pittari`.

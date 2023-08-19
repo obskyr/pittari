@@ -27,8 +27,8 @@
 // When --inexact is used. By default, no fuzziness is used.
 #define DEFAULT_FUZZINESS 10
 
-const char* argp_program_version = "TODO v0.1-alpha";
-const char* argp_program_bug_address = "https://github.com/obskyr/TODO/issues";
+const char* argp_program_version = "Pittari Pixels v0.1-alpha";
+const char* argp_program_bug_address = "https://github.com/obskyr/pittari/issues";
 static char doc[] = "\nScans a series of screenshots that have been scaled up to determine what their original resolution (with square 1x1 pixels) were. Combine with a program to scale them down and then up to your desired resolution to re-scale screenshots that were taken at a wonky scale! Multiple screenshots can be supplied (as long as they're of the same resolution and were taken in the same program) to make the result more likely to be accurate (though most likely, one will suffice).";
 static char args_doc[] = "<SCREENSHOT IMAGE...>";
 static struct argp_option options[] = {
