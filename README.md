@@ -1,6 +1,6 @@
 # Pittari Pixels
 
-Have you ever taken a screenshot in an emulator that *just wasn't scaled right?* The infamous non-integer nearest-neighbor scale. Wonky pixels of different sizes; mamma mia. Pittari Pixels takes such screenshots and figures out their original resolution for you, so that you can [resize](#resizing-screenshots) them to your heart's content.
+Have you ever taken a screenshot in an emulator that *just wasn't scaled right?* The infamous non-integer nearest-neighbor scale. Wonky pixels of different sizes; mamma mia. Pittari Pixels takes such screenshots and **figures out the original resolution** for you, so that you can [resize](#resizing-screenshots) them to your heart's content.
 
 <h3 align="center">Before Pittari Pixels</h3>
 
@@ -8,9 +8,6 @@ Have you ever taken a screenshot in an emulator that *just wasn't scaled right?*
     <img src="tests/180x240.png" style="height: 250px; vertical-align: middle; image-rendering: pixelated"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     <img src="tests/248x215%20fuzzy.png" style="height: 250px; vertical-align: middle; image-rendering: pixelated"/>
 </div>
-&nbsp;
-
-> These screenshots are of 2D games, but Pittari Pixels works just as well for screenshots of video games in 3D.
 
 <h3 align="center">After Pittari Pixels</h3>
 
@@ -79,7 +76,7 @@ To resize your wonkily scaled screenshots back to 1:1 square pixels, you can use
 magick convert input.png -filter point -resize 256x224! output.png
 ```
 
-To scale an image up, make sure to scale it down *first* – that way, you're actually scaling up the 1:1 image. For example, to take a wonkily scaled SNES screenshot and scale it to 3× at the SNES's native aspect ratio, you can do:
+**To scale up an image,** make sure to **scale it down *first*** – that way, you're actually scaling up the 1:1 image. For example, to take a wonkily scaled SNES screenshot and scale it to 3× at the SNES's native aspect ratio, you can do:
 
 ```bash
 # For the width: 256 * 3 * 8⁄7 (an NTSC SNES's pixel aspect ratio) ≈ 878
@@ -87,7 +84,7 @@ To scale an image up, make sure to scale it down *first* – that way, you're ac
 magick convert input.png -filter point -resize 256x224! -resize 878x672! output.png
 ```
 
-> Until the advent of LCD displays, most systems did not have square pixels – they may be a bit wider than they are tall, or a bit taller than they are wide. This is called the “pixel aspect ratio” and is separate from its display aspect ratio (what you'd usually just call the “aspect ratio”). This is *crucial* to making emulated video (and thus screenshots) look correct, so yours truly heartily recommends taking it into account. It's as simple as multiplying the width of the image by a certain number while leaving the height untouched! [Pixel aspect ratios for various systems can be found here (see the “PAR” column).](https://pineight.com/mw/page/Dot_clock_rates.xhtml)
+> Until the advent of liquid crystal displays, most systems did not have square pixels – they may be a bit wider than they are tall, or a bit taller than they are wide. This is called the “pixel aspect ratio”, and is separate from its display aspect ratio (what you'd usually just call the “aspect ratio”). This is *crucial* to making emulated video (and thus screenshots) look correct, so yours truly heartily recommends taking it into account. It's as simple as multiplying the width of the image by a certain number while leaving the height untouched! [Pixel aspect ratios for various systems can be found here (see the “PAR” column).](https://pineight.com/mw/page/Dot_clock_rates.xhtml)
 
 ## Limitations
 
